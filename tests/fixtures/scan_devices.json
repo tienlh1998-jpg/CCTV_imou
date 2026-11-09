@@ -1,0 +1,48 @@
+{
+  "devices": [
+    {
+      "ip": "10.255.255.10",
+      "name": "Camera Test 10",
+      "model": "IPC-TEST",
+      "class": "IPC",
+      "mac": "AA:BB:CC:DD:EE:10",
+      "serial": "TEST00010",
+      "firmware": "1.0.0",
+      "http_port": 80,
+      "tcp_port": 37777,
+      "gateway": "10.255.255.1",
+      "netmask": "255.255.255.0",
+      "dhcp": "Static",
+      "vendor": "Dahua/Imou",
+      "init_state": 0,
+      "vlan": "VLAN 255",
+      "vlan_id": "255",
+      "status": "online",
+      "is_solar": false,
+      "discovery_proto": "Dahua DHIP",
+      "onvif_supported": false
+    },
+    {
+      "ip": "10.255.255.11",
+      "name": "Camera Test 11",
+      "model": "IPC-TEST",
+      "class": "IPC",
+      "mac": "AA:BB:CC:DD:EE:11",
+      "serial": "TEST00011",
+      "firmware": "1.0.0",
+      "http_port": 80,
+      "tcp_port": 37777,
+      "gateway": "10.255.255.1",
+      "netmask": "255.255.255.0",
+      "dhcp": "Static",
+      "vendor": "Dahua/Imou",
+      "init_state": 0,
+      "vlan": "VLAN 255",
+      "vlan_id": "255",
+      "status": "online",
+      "is_solar": false,
+      "discovery_proto": "ONVIF WS-Discovery",
+      "onvif_supported": true
+    }
+  ]
+}

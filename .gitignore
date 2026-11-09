@@ -1,0 +1,62 @@
+# =============================================================================
+# CCTV Vision Hub — .gitignore
+# Không commit cấu hình thật, bí mật, log, artifact phát hành.
+# =============================================================================
+
+# Cấu hình thật (chứa mật khẩu admin/camera, Telegram token/chat id)
+settings.json
+managed_cameras.json
+settings.json.bak.*
+managed_cameras.json.bak.*
+secrets/
+secrets/*.json
+.env
+.env.*
+
+# Dữ liệu vận hành
+recordings/*
+!recordings/.gitkeep
+snapshots/*
+!snapshots/.gitkeep
+data/
+logs/
+backups/
+backup/
+
+# Log và file tạm
+*.log
+*.tmp
+*.swp
+*.bak
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Build / phát hành
+dist/
+build/
+*.zip
+*.apk
+*.aab
+*.keystore
+*.jks
+android/app/build/
+android/local.properties
+
+# Bộ cài Python portable (không commit)
+python_env/
+python_installer.exe
+python_3.11.9.zip
+
+# IDE / OS
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini
+.DS_Store

@@ -1,0 +1,67 @@
+# =============================================================================
+# CCTV Vision Hub — Docker Compose
+#
+# Mặc định: bridge network, chỉ publish cổng ra 127.0.0.1 (an toàn cho reverse
+# proxy / Cloudflare Tunnel trên cùng máy). Đổi CCTV_PUBLISH_ADDR=0.0.0.0 nếu
+# thật sự cần truy cập LAN trực tiếp, và chỉ làm việc đó trong mạng tin cậy.
+#
+# Dò camera bằng UDP multicast/broadcast (DHDiscover, WS-Discovery, SADP) cần
+# host network; vì lý do an toàn, compose này KHÔNG cung cấp chế độ host network.
+# Nếu thật sự cần quét multicast, chạy trực tiếp app.py trên host trong mạng tin cậy
+# thay vì mở rộng quyền mạng cho container.
+#
+# File cấu hình thật nằm trong ./data (mount), KHÔNG bake vào image:
+#   ./data/settings.json, ./data/managed_cameras.json
+# =============================================================================
+
+services:
+  cctv-hub:
+    build: .
+    image: cctv-vision-hub:2.0.0
+    container_name: cctv-vision-hub
+    restart: unless-stopped
+    ports:
+      - "${CCTV_PUBLISH_ADDR:-127.0.0.1}:8080:8080"
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      CCTV_SETTINGS_FILE: /app/data/settings.json
+      CCTV_MANAGED_FILE: /app/data/managed_cameras.json
+      CCTV_RECORDINGS_DIR: /app/data/recordings
+      CCTV_SNAPSHOTS_DIR: /app/data/snapshots
+      CCTV_AUDIT_LOG: /app/data/logs/audit.jsonl
+      CCTV_APP_LOG: /app/data/logs/app.log
+      CCTV_BOOTSTRAP_FILE: /app/data/bootstrap_admin.txt
+      CCTV_APK_FILE: /app/data/CCTVVisionHub-v2.apk
+      # Chỉ bật khi chạy sau reverse proxy tin cậy đã chuẩn hóa Host/X-Forwarded-*:
+      # CCTV_TRUST_PROXY: "1"
+      # Khi dùng Docker secret, bỏ comment dòng dưới và mục secrets cuối file:
+      # CCTV_SECRETS_FILE: /run/secrets/cctv_secrets
+    volumes:
+      - ./data:/app/data
+      - ./backups:/app/backups
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+# Docker secret (tuỳ chọn). Tạo ./secrets/cctv_secrets.json với quyền hạn chế,
+# không commit, không đưa vào image. Bỏ comment khi dùng CCTV_SECRETS_FILE.
+# secrets:
+#   cctv_secrets:
+#     file: ./secrets/cctv_secrets.json

@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">CCTV Vision Hub</string>
+    <string name="default_server_url"></string>
+    <string name="server_not_configured">Chưa cấu hình máy chủ</string>
+    <string name="server_settings_title">Cấu hình Máy Chủ CCTV Hub</string>
+    <string name="server_settings_hint">Nhập địa chỉ IP hoặc tên miền máy chủ (ví dụ: http://&lt;IP-máy-chủ&gt;:8080 hoặc https://cctv.congty.com)</string>
+    <string name="btn_save">Lưu &amp; Kết Nối</string>
+    <string name="btn_cancel">Hủy bỏ</string>
+    <string name="error_connection_title">Không thể kết nối đến Máy Chủ CCTV Hub</string>
+    <string name="error_connection_desc">Vui lòng kiểm tra lại kết nối Wi-Fi/4G và đảm bảo máy tính trạm công ty đang bật app.py.</string>
+    <string name="btn_retry">Thử Lại</string>
+    <string name="btn_change_ip">Đổi Địa Chỉ Máy Chủ</string>
+</resources>

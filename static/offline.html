@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Ngoại tuyến · CCTV Vision Hub</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="/static/icons/favicon.png" type="image/png">
+</head>
+<body class="is-login">
+  <main class="c-login" role="main">
+    <div class="c-login__glow" aria-hidden="true"></div>
+    <section class="c-login__card" aria-labelledby="offline-title">
+      <div class="c-login__brand">
+        <span class="c-brand-mark" aria-hidden="true"></span>
+        <span class="c-login__title" id="offline-title">CCTV Vision Hub</span>
+      </div>
+      <h1 class="c-login__subtitle">Đang ngoại tuyến</h1>
+      <p class="c-muted-block">
+        Không kết nối được tới máy chủ CCTV Hub. Hãy kiểm tra Wi-Fi / mạng nội bộ
+        rồi tải lại trang.
+      </p>
+      <p class="c-login__version">Dữ liệu camera không được lưu trên thiết bị này.</p>
+      <button class="c-btn c-btn--primary c-login__submit" type="button" id="offline-retry">
+        Thử lại
+      </button>
+      <noscript>
+        <p class="c-muted-block">Bật JavaScript hoặc tải lại trang để thử kết nối lại.</p>
+      </noscript>
+    </section>
+  </main>
+  <script src="/static/js/offline.js" defer></script>
+</body>
+</html>

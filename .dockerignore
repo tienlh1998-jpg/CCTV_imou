@@ -1,0 +1,69 @@
+# =============================================================================
+# CCTV Vision Hub — .dockerignore
+# Docker image chỉ chứa mã nguồn và asset; tuyệt đối không chứa bí mật.
+# =============================================================================
+
+# Cấu hình thật / bí mật
+settings.json
+managed_cameras.json
+settings.json.bak.*
+managed_cameras.json.bak.*
+*.bak
+.env
+.env.*
+secrets/
+secrets/*.json
+
+# Dữ liệu vận hành và log
+data/
+logs/
+backups/
+backup/
+recordings/
+snapshots/
+*.log
+
+# Runtime portable và build artifact
+python_env/
+python_installer.exe
+python_3.11.9.zip
+*.zip
+*.apk
+*.aab
+dist/
+build/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Artifact APK/ZIP cũ từng bị phát tán công khai
+static/download/
+static/CCTVVisionHub_Windows.zip
+static/CCTVVisionHub.apk
+
+# Không đưa tài liệu nội bộ / test / công cụ dev vào image
+tests/
+docs/
+android/
+scripts/
+.antigravity/
+AGY_INSTRUCTIONS.md
+README_RESTORE_HUONG_DAN.txt
+build_windows.py
+build_exe.bat
+package_windows.py
+install_windows_startup.bat
+run_windows.bat
+run_windows_tray.bat
+cctv_tray.py
+
+# Git / IDE / OS
+.git/
+.gitignore
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini
+.DS_Store

@@ -1,0 +1,42 @@
+{
+  "id": "/",
+  "name": "CCTV Vision Hub — Giám sát và vận hành an ninh",
+  "short_name": "CCTV Hub",
+  "description": "Trung tâm vận hành NOC: giám sát camera Dahua/Imou/Hikvision/ONVIF, cảnh báo Telegram và quản lý thiết bị nội bộ.",
+  "lang": "vi",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#060A13",
+  "theme_color": "#060A13",
+  "categories": ["business", "productivity", "security"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/static/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

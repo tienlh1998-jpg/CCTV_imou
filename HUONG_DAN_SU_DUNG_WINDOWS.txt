@@ -1,0 +1,173 @@
+================================================================================
+                 CCTV VISION HUB - HƯỚNG DẪN SỬ DỤNG TRÊN WINDOWS
+================================================================================
+
+Hệ thống quản lý, giám sát và cảnh báo camera an ninh đa thương hiệu
+(Dahua, Imou, Hikvision, Ezviz, TP-Link Tapo, Uniview, Yoosee, ONVIF...).
+
+Phiên bản tài liệu: 2.0.0
+
+--------------------------------------------------------------------------------
+1. YÊU CẦU HỆ THỐNG
+--------------------------------------------------------------------------------
+- Windows 10 hoặc Windows 11 (64-bit).
+- Python 3.11 (khuyến nghị 3.11.9).
+  * Khi cài đặt, TÍCH CHỌN "Add python.exe to PATH".
+  * Nếu dự án có sẵn thư mục python_env, các script sẽ dùng
+    python_env\tools\python.exe trước.
+- FFmpeg là BẮT BUỘC để xem video/audio, chụp snapshot và ghi hình.
+  * Cài bằng: winget install Gyan.FFmpeg
+  * Hoặc tải tại https://ffmpeg.org/download.html, thêm thư mục bin vào PATH.
+  * Kiểm tra: ffmpeg -version
+  * Thiếu FFmpeg thì web vẫn mở nhưng /api/health báo "degraded" và
+    live view/audio/ghi hình sẽ lỗi. Đây là lỗi cần khắc phục, không phải
+    tính năng tuỳ chọn.
+
+--------------------------------------------------------------------------------
+2. KHỞI CHẠY LẦN ĐẦU
+--------------------------------------------------------------------------------
+Bạn có thể chọn một trong các cách sau:
+
+► CÁCH 1: KHỞI CHẠY NHANH CÓ CỬA SỔ THEO DÕI (KHUYÊN DÙNG)
+   - Click đúp file: run_windows.bat
+   - Script kiểm tra Python, thư viện, FFmpeg rồi khởi động server.
+   - Mở trình duyệt tại: http://127.0.0.1:<CCTV_PORT> (mặc định 8080).
+   - Không tự cài Python; nếu thiếu Python, script báo lỗi rõ và dừng.
+
+► CÁCH 2: CHẠY DƯỚI KHAY HỆ THỐNG
+   - Click đúp file: run_windows_tray.bat
+   - Nếu thiếu pystray/Pillow, script in lệnh cài và chờ bạn xác nhận.
+   - Click chuột phải biểu tượng CCTV để mở web hoặc thoát.
+
+► CÁCH 3: TỰ KHỞI ĐỘNG CÙNG WINDOWS (24/7)
+   - Chỉ dùng khi thật sự cần dịch vụ chạy nền.
+   - Click đúp file: install_windows_startup.bat
+   - Script hỏi xác nhận, tạo shortcut trong Startup, dùng pythonw nếu có và
+     ghi lỗi vào logs\startup.log.
+   - Gỡ bỏ: mở Win + R, gõ shell:startup, xoá file CCTVVisionHub.vbs.
+
+► CÁCH 4: ĐÓNG GÓI THÀNH FILE .EXE
+   - Click đúp file: build_exe.bat
+   - Script hỏi trước khi cài PyInstaller.
+   - Kết quả: dist\CCTVVisionHub\CCTVVisionHub.exe
+   - Không đóng gói settings.json, managed_cameras.json, log, APK hay ZIP cũ.
+
+--------------------------------------------------------------------------------
+3. ĐĂNG NHẬP LẦN ĐẦU VÀ TÀI KHOẢN
+--------------------------------------------------------------------------------
+Ứng dụng KHÔNG có mật khẩu/PIN mặc định, không có backdoor đăng nhập.
+
+Khi khởi động lần đầu, chọn một trong hai cách:
+
+  Cách A: Đặt biến môi trường trước khi chạy:
+      set CCTV_ADMIN_PASSWORD=<mật-khẩu-mạnh-tối-thiểu-10-ký-tự>
+      run_windows.bat
+
+  Cách B: Không đặt biến môi trường:
+      - Đặt CCTV_BOOTSTRAP_FILE, ví dụ:
+            set CCTV_BOOTSTRAP_FILE=%CD%\data\bootstrap_admin.txt
+      - Ứng dụng sinh mật khẩu ngẫu nhiên và ghi vào file đó (quyền hạn chế).
+      - Mở file, đăng nhập bằng tài khoản admin + mật khẩu đó.
+      - ĐỔI MẬT KHẨU NGAY trong Cài đặt -> Bảo mật.
+      - Sau khi đổi thành công, file bootstrap được xoá (best effort).
+
+Nếu ứng dụng dừng với mã 2: không ghi được file bootstrap và cũng không có
+CCTV_ADMIN_PASSWORD. Hãy tạo thư mục data ghi được, đặt CCTV_BOOTSTRAP_FILE
+hoặc đặt CCTV_ADMIN_PASSWORD rồi chạy lại.
+
+Tài khoản Viewer (tuỳ chọn):
+  - Viewer chỉ xem: stream, snapshot, trạng thái, lịch sử, recordings,
+    thông tin dung lượng.
+  - Admin đặt/xoá mật khẩu viewer trong Cài đặt; cần nhập lại mật khẩu admin.
+  - Chưa đặt mật khẩu viewer thì lựa chọn viewer bị vô hiệu hoá.
+
+Đổi mật khẩu admin/viewer sẽ thu hồi toàn bộ phiên đăng nhập cũ.
+
+--------------------------------------------------------------------------------
+4. TRUY CẬP TỪ ĐIỆN THOẠI & MẠNG NỘI BỘ (LAN)
+--------------------------------------------------------------------------------
+- Cùng mạng Wi-Fi/LAN, mở: http://<IP_MAY_TINH>:<CCTV_PORT>
+  (ví dụ http://192.168.1.50:8080).
+- Android: dùng Chrome -> menu 3 chấm -> "Cài đặt ứng dụng" (PWA).
+- iPhone/iPad: Safari -> Chia sẻ -> "Thêm vào Màn hình chính".
+- APK cũ (hardcode IP, HTTP cleartext, API cũ) không được phân phối/hỗ trợ.
+  File cũ cần được xoá sau khi APK v2 build/verify xong. Khi có APK v2, tải qua
+  /download/app.apk sau khi đăng nhập. Chưa có APK v2 thì dùng PWA.
+
+--------------------------------------------------------------------------------
+5. BẢO MẬT VẬN HÀNH
+--------------------------------------------------------------------------------
+- KHÔNG mở cổng 8080 trực tiếp ra Internet.
+- Nếu cần truy cập ngoài LAN, dùng VPN hoặc Cloudflare Tunnel + lớp xác thực
+  Cloudflare Access/SSO/MFA. Tunnel một mình KHÔNG thay thế xác thực.
+- Không dùng lại mật khẩu camera làm mật khẩu admin.
+- Không tắt xác thực chứng chỉ TLS của Telegram (CERT_NONE/verify=False).
+- Bật HTTPS khi truy cập ngoài LAN.
+- Cấp quyền file tối thiểu:
+    icacls settings.json /inheritance:r /grant:r "<TAI_KHOAN>:(R,W)"
+    icacls managed_cameras.json /inheritance:r /grant:r "<TAI_KHOAN>:(R,W)"
+  Không để BUILTIN\Users đọc/ghi bí mật.
+- Bật BitLocker cho ổ chứa dữ liệu camera.
+
+--------------------------------------------------------------------------------
+6. BACKUP VÀ PHỤC HỒI
+--------------------------------------------------------------------------------
+CẢNH BÁO: backup CÓ CHỨA BÍ MẬT!
+  - settings.json: hash admin/viewer, Telegram token/chat id.
+  - managed_cameras.json: mật khẩu camera.
+  - recordings/, snapshots/: hình ảnh nội bộ.
+
+Quy trình:
+  1. Dừng ứng dụng trước khi copy.
+  2. Copy settings.json, managed_cameras.json, recordings/, snapshots/,
+     logs/ (nếu cần điều tra) sang nơi lưu trữ được mã hoá.
+  3. Không backup python_env/.
+  4. Không để backup trong static/, không gửi qua chat/email công khai,
+     không commit lên git.
+  5. Thử khôi phục định kỳ. Sau khôi phục, đổi lại mật khẩu nếu nghi ngờ lộ.
+
+Nếu từng phát tán file ZIP/APK/log cũ: coi như bí mật đã lộ. Xem
+docs\SECURITY.md để rotate admin/viewer, mật khẩu camera và Telegram token.
+
+--------------------------------------------------------------------------------
+7. XỬ LÝ SỰ CỐ THƯỜNG GẶP
+--------------------------------------------------------------------------------
+- Không mở được web:
+  + Kiểm tra cổng có bị chiếm không; đổi CCTV_PORT.
+  + Kiểm tra Windows Firewall (Allow access khi được hỏi).
+- /api/health báo degraded:
+  + Thiếu FFmpeg; cài bằng winget install Gyan.FFmpeg rồi mở lại ứng dụng.
+- Live view/audio lỗi 503:
+  + Thiếu FFmpeg hoặc thiếu libmp3lame; xem ffmpeg.audio_available trong health.
+- Đăng nhập trả 429:
+  + Bị rate limit; chờ theo header Retry-After rồi thử lại.
+- Đăng nhập trả 401 liên tục:
+  + Session hết hạn sau 12 giờ, cookie bị chặn, hoặc server vừa restart.
+- Viewer bấm nút bị 403:
+  + Thao tác chỉ dành cho admin; dùng tài khoản admin.
+- Camera báo "auth failed":
+  + Sai mật khẩu camera; cập nhật ở màn Camera bằng tài khoản admin.
+- Sai giờ ghi hình:
+  + Kiểm tra timezone Windows và TZ=Asia/Ho_Chi_Minh.
+
+--------------------------------------------------------------------------------
+8. CHẠY THỬ / KIỂM THỬ KHÔNG CẦN CAMERA THẬT
+--------------------------------------------------------------------------------
+Chỉ dùng file cấu hình tạm, không dùng settings.json thật:
+
+  set CCTV_TEST_MODE=1
+  set CCTV_DISABLE_ALARMS=1
+  set CCTV_DISABLE_FFMPEG=1
+  set CCTV_SETTINGS_FILE=%TEMP%\cctv-test\settings.json
+  set CCTV_MANAGED_FILE=%TEMP%\cctv-test\managed_cameras.json
+  set CCTV_HOST=127.0.0.1
+  set CCTV_PORT=18080
+  set CCTV_ADMIN_PASSWORD=<mật-khẩu-test-mạnh>
+  python app.py
+
+Không chạy production ở 0.0.0.0:8080 trong lúc kiểm thử. Không gọi camera,
+không gửi Telegram, không format thẻ, không reboot.
+
+================================================================================
+Chi tiết đầy đủ: README.md và docs\SECURITY.md
+================================================================================

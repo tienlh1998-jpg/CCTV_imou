@@ -1,0 +1,20 @@
+# =============================================================================
+# CCTV Vision Hub — Python dependencies (Python 3.11)
+#
+# Cài: python -m pip install -r requirements.txt
+#
+# LƯU Ý: FFmpeg là gói HỆ THỐNG BẮT BUỘC cho live view/ghi hình/audio.
+#   Windows : winget install Gyan.FFmpeg  (hoặc tải ffmpeg.org)
+#   Debian  : sudo apt-get install ffmpeg
+#   Docker  : đã cài trong Dockerfile
+# Ứng dụng kiểm tra FFmpeg lúc khởi động và báo trạng thái qua /api/health.
+#
+# Package `dahua/` được vendor trong repo (không phải dependency pip).
+# =============================================================================
+
+bottle==0.13.4
+requests==2.34.2
+urllib3==2.8.0
+Pillow==12.3.0
+pystray==0.19.5
+certifi==2026.7.22
