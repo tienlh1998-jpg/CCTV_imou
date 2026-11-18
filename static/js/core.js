@@ -3313,9 +3313,61 @@
         el: audio,
         play: function () {
           audio.src = mediaUrl('/api/stream/audio', ip, subtype, channel) + '&_=' + Date.now();
-          return audio.play().catch(function (err) {
-            audio.removeAttribute('src');
-            throw err;
+          return new Promise(function (resolve, reject) {
+            var settled = false;
+            var cleanupTimer = null;
+
+            function cleanup() {
+              if (cleanupTimer) { clearTimeout(cleanupTimer); cleanupTimer = null; }
+              audio.removeEventListener('playing', onPlaying);
+              audio.removeEventListener('error', onError);
+            }
+
+            function onPlaying() {
+              if (settled) { return; }
+              settled = true;
+              cleanup();
+              resolve();
+            }
+
+            function onError(evt) {
+              if (settled) { return; }
+              settled = true;
+              cleanup();
+              var err = (audio.error && audio.error.message) ? new Error(audio.error.message) : (evt || new Error('Audio play error'));
+              audio.removeAttribute('src');
+              try { audio.load(); } catch (e) { /* bỏ qua */ }
+              reject(err);
+            }
+
+            audio.addEventListener('playing', onPlaying, { once: true });
+            audio.addEventListener('error', onError, { once: true });
+
+            cleanupTimer = setTimeout(function () {
+              if (settled) { return; }
+              settled = true;
+              cleanup();
+              audio.removeAttribute('src');
+              try { audio.load(); } catch (e) { /* bỏ qua */ }
+              reject(new Error('Audio stream timed out waiting for data'));
+            }, 8000);
+
+            audio.play().then(function () {
+              /* Browser đã bắt đầu decode / phát âm thanh */
+              if (!settled) {
+                settled = true;
+                cleanup();
+                resolve();
+              }
+            }).catch(function (err) {
+              if (!settled) {
+                settled = true;
+                cleanup();
+                audio.removeAttribute('src');
+                try { audio.load(); } catch (e) { /* bỏ qua */ }
+                reject(err);
+              }
+            });
           });
         },
         stop: function () {

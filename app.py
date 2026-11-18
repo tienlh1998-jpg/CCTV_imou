@@ -1882,7 +1882,7 @@ def api_stream_mjpeg():
                                     subtype=subtype, channel=channel)
     cmd = [
         _ffmpeg_bin(), "-fflags", "nobuffer", "-flags", "low_delay",
-        "-rtsp_transport", "tcp", "-i", rtsp_url, "-an",
+        "-rtsp_transport", "tcp", "-timeout", "5000000", "-i", rtsp_url, "-an",
         "-c:v", "mjpeg", "-q:v", "5", "-r", "20", "-f", "mpjpeg", "pipe:1",
     ]
     return _stream_response(cmd, "multipart/x-mixed-replace; boundary=ffmpeg",
@@ -1908,7 +1908,7 @@ def api_stream_audio():
                                     subtype=subtype, channel=channel)
     cmd = [
         _ffmpeg_bin(), "-fflags", "nobuffer", "-flags", "low_delay",
-        "-rtsp_transport", "tcp", "-i", rtsp_url, "-vn", "-af", "volume=2.5",
+        "-rtsp_transport", "tcp", "-timeout", "5000000", "-i", rtsp_url, "-vn", "-af", "volume=2.5",
         "-c:a", "libmp3lame", "-b:a", "64k", "-ar", "22050",
         "-flush_packets", "1", "-f", "mp3", "pipe:1",
     ]
