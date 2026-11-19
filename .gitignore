@@ -53,6 +53,7 @@ android/local.properties
 python_env/
 python_installer.exe
 python_3.11.9.zip
+ffmpeg/
 
 # IDE / OS
 .idea/

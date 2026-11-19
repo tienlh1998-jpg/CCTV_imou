@@ -14,6 +14,14 @@ echo.
 set "PYTHON_EXE=%~dp0python_env\tools\python.exe"
 if not exist "%PYTHON_EXE%" set "PYTHON_EXE=python"
 
+:: Uu tien FFmpeg di kem trong thu muc project neu co
+if exist "%~dp0ffmpeg\bin" (
+    set "PATH=%~dp0ffmpeg\bin;%PATH%"
+)
+if exist "%LOCALAPPDATA%\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0.2-full_build\bin" (
+    set "PATH=%LOCALAPPDATA%\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0.2-full_build\bin;%PATH%"
+)
+
 :: 1. Kiem tra Python (khong tu cai, khong chay ngam khi thieu)
 "%PYTHON_EXE%" --version >nul 2>&1
 if errorlevel 1 (

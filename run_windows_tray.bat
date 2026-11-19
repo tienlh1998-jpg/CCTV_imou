@@ -14,6 +14,11 @@ echo.
 set "PYTHON_EXE=%~dp0python_env\tools\python.exe"
 if not exist "%PYTHON_EXE%" set "PYTHON_EXE=python"
 
+:: Uu tien FFmpeg di kem trong thu muc project neu co
+if exist "%~dp0ffmpeg\bin" (
+    set "PATH=%~dp0ffmpeg\bin;%PATH%"
+)
+
 :: 1. Kiem tra Python
 "%PYTHON_EXE%" --version >nul 2>&1
 if errorlevel 1 (
