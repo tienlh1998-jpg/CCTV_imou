@@ -43,6 +43,11 @@ import bottle
 from bottle import error, request, response, route, run, static_file, HTTPResponse, ServerAdapter
 
 import auth as cctv_auth
+
+_SUBPROCESS_KWARGS = {}
+if sys.platform == "win32":
+    _SUBPROCESS_KWARGS["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+
 from alarm_manager import AlarmManager
 from managed_manager import (
     add_batch_managed_cameras,
@@ -1831,6 +1836,7 @@ def _stream_response(cmd: list, mimetype: str, boundary: str, slot_key: str,
     try:
         proc = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=0,
+            **_SUBPROCESS_KWARGS
         )
     except Exception as exc:
         slots.release(slot_key)
@@ -1959,7 +1965,7 @@ def _capture_snapshot(ip: str, username: str, password: str,
     ]
     try:
         proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                              timeout=timeout)
+                              timeout=timeout, **_SUBPROCESS_KWARGS)
         if proc.returncode == 0 and proc.stdout:
             return proc.stdout
     except Exception:
@@ -2049,7 +2055,8 @@ def api_record_start():
         ]
         try:
             proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
-                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                    **_SUBPROCESS_KWARGS)
         except Exception as exc:
             print(f"[!] Không khởi động được ghi hình: {exc}")
             raise cctv_auth.fail(503, "FFMPEG_UNAVAILABLE", "Không khởi động được FFmpeg.")

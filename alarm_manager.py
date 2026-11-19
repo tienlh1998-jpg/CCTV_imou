@@ -19,6 +19,7 @@ import threading
 import datetime
 import urllib.parse
 import subprocess
+import sys
 import uuid
 from typing import Callable, Optional
 from collections import deque
@@ -504,8 +505,12 @@ class AlarmManager:
             "pipe:1"
         ]
 
+        kwargs = {}
+        if sys.platform == "win32":
+            kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+
         try:
-            proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=5.0)
+            proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=5.0, **kwargs)
             if proc.returncode == 0 and proc.stdout:
                 return proc.stdout
         except Exception as e:
