@@ -104,6 +104,7 @@ echo set "CCTV_MANAGED_FILE=%CCTV_MANAGED_FILE%"
 echo set "CCTV_BOOTSTRAP_FILE=%CCTV_BOOTSTRAP_FILE%"
 echo set "CCTV_APP_LOG=%CCTV_APP_LOG%"
 echo set "CCTV_AUDIT_LOG=%CCTV_AUDIT_LOG%"
+echo if exist "%%~dp0ffmpeg\bin" set "PATH=%%~dp0ffmpeg\bin;%%PATH%%"
 echo echo [%%DATE%% %%TIME%%] Bat dau khoi dong CCTV Vision Hub ^>^> "logs\startup.log"
 echo "%RUN_PYTHON%" app.py ^>^> "logs\startup.log" 2^>^&1
 echo echo [%%DATE%% %%TIME%%] Tien trinh ket thuc voi ma %%ERRORLEVEL%% ^>^> "logs\startup.log"
