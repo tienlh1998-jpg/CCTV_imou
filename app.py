@@ -603,6 +603,10 @@ def _get_camera_rtsp_url(
 
     if custom_path:
         path = custom_path if custom_path.startswith("/") else f"/{custom_path}"
+        if "subtype=" in path:
+            path = re.sub(r"subtype=\d+", f"subtype={subtype_int}", path)
+        if "channel=" in path:
+            path = re.sub(r"channel=\d+", f"channel={channel_int}", path)
         return f"rtsp://{user_enc}:{pwd_enc}@{ip}:{rtsp_port}{path}"
 
     vendor_lower = vendor.lower()
@@ -2533,6 +2537,52 @@ def api_camera_details():
                         details[key] = device[key]
                 break
     return J(details=details)
+
+
+@route("/api/camera/rtsp-urls", method="GET")
+@cctv_auth.require_role(cctv_auth.VIEWER)
+def api_camera_rtsp_urls():
+    _reject_password_query()
+    ip = _scope_target(request.query.get("ip", ""), _role())
+    channel = 1
+    try:
+        channel = int(request.query.get("channel") or 1)
+    except (TypeError, ValueError):
+        channel = 1
+
+    is_admin = _role() == cctv_auth.ADMIN
+    username = ""
+    password = ""
+    try:
+        username, password = _resolve_credentials(ip)
+    except Exception:
+        cam = _managed_by_ip(ip)
+        username = str((cam or {}).get("username") or "")
+        password = ""
+
+    fallback_user = username or "admin"
+    main_url = _get_camera_rtsp_url(ip, username=fallback_user, password=password, subtype="0", channel=channel)
+    sub_url = _get_camera_rtsp_url(ip, username=fallback_user, password=password, subtype="1", channel=channel)
+
+    masked_pwd = "••••••" if password else "[PASSWORD]"
+    masked_main = _get_camera_rtsp_url(ip, username=fallback_user, password=masked_pwd, subtype="0", channel=channel)
+    masked_main = masked_main.replace(urllib.parse.quote(masked_pwd), masked_pwd)
+    masked_sub = _get_camera_rtsp_url(ip, username=fallback_user, password=masked_pwd, subtype="1", channel=channel)
+    masked_sub = masked_sub.replace(urllib.parse.quote(masked_pwd), masked_pwd)
+
+    response_data = {
+        "ok": True,
+        "ip": ip,
+        "channel": channel,
+        "masked_main_url": masked_main,
+        "masked_sub_url": masked_sub,
+        "has_password": bool(password),
+    }
+    if is_admin:
+        response_data["main_url"] = main_url
+        response_data["sub_url"] = sub_url
+
+    return J(**response_data)
 
 
 @route("/api/camera/name", method="POST")

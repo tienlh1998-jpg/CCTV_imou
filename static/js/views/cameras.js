@@ -139,6 +139,46 @@
     return dl;
   }
 
+  function buildRtspStreamUrl(opts) {
+    var ip = String(opts.ip || '').trim();
+    var port = parseInt(opts.rtsp_port || 554, 10) || 554;
+    var user = String(opts.username || 'admin').trim() || 'admin';
+    var pwd = String(opts.password || '');
+    var vendor = String(opts.vendor || '').toLowerCase();
+    var subtype = parseInt(opts.subtype || 0, 10);
+    var channel = parseInt(opts.channel || 1, 10) || 1;
+    var customPath = String(opts.rtsp_path || '').trim();
+
+    var encUser = encodeURIComponent(user);
+    var encPwd = pwd ? encodeURIComponent(pwd) : '••••••';
+
+    if (customPath) {
+      var p = customPath.charAt(0) === '/' ? customPath : '/' + customPath;
+      if (p.indexOf('subtype=') !== -1) {
+        p = p.replace(/subtype=\d+/, 'subtype=' + subtype);
+      }
+      if (p.indexOf('channel=') !== -1) {
+        p = p.replace(/channel=\d+/, 'channel=' + channel);
+      }
+      return 'rtsp://' + encUser + ':' + encPwd + '@' + ip + ':' + port + p;
+    }
+
+    if (vendor.indexOf('hikvision') !== -1 || vendor.indexOf('ezviz') !== -1) {
+      var chPart = subtype === 0 ? (channel + '01') : (channel + '02');
+      return 'rtsp://' + encUser + ':' + encPwd + '@' + ip + ':' + port + '/Streaming/Channels/' + chPart;
+    }
+    if (vendor.indexOf('tapo') !== -1 || vendor.indexOf('tp-link') !== -1) {
+      return 'rtsp://' + encUser + ':' + encPwd + '@' + ip + ':' + port + (subtype === 0 ? '/stream1' : '/stream2');
+    }
+    if (vendor.indexOf('uniview') !== -1 || vendor.indexOf('unv') !== -1) {
+      return 'rtsp://' + encUser + ':' + encPwd + '@' + ip + ':' + port + '/unicast/c' + channel + (subtype === 0 ? '/s0' : '/s1') + '/live';
+    }
+    if (vendor.indexOf('yoosee') !== -1 || vendor.indexOf('xiongmai') !== -1 || vendor === 'xm') {
+      return 'rtsp://' + encUser + ':' + encPwd + '@' + ip + ':' + port + '/onvif' + channel;
+    }
+    return 'rtsp://' + encUser + ':' + encPwd + '@' + ip + ':' + port + '/cam/realmonitor?channel=' + channel + '&subtype=' + subtype;
+  }
+
   /* --------------------------- List loading ---------------------------- */
 
   function setRefreshBusy(busy) {
@@ -710,6 +750,138 @@
     body.appendChild(grid);
     body.appendChild(fNote.el);
     body.appendChild(armSwitch.el);
+
+    var liveRtspUrls = null;
+    var showRtspPwd = false;
+
+    var rtspCard = el('div', { class: 'c-card u-mt-12' });
+    var rtspCardBody = el('div', { class: 'c-card__body c-stack c-stack--sm' });
+    var rtspCardHead = el('div', { class: 'c-row c-row--between' });
+    rtspCardHead.appendChild(el('strong', { text: 'Đường dẫn luồng RTSP (VLC / NVR / OBS)' }));
+
+    var togglePwdBtn = null;
+    if (ctx && ctx.isAdmin) {
+      togglePwdBtn = ui.button({
+        label: 'Hiện mật khẩu',
+        icon: 'eye',
+        size: 'xs',
+        variant: 'ghost',
+        onClick: function () {
+          showRtspPwd = !showRtspPwd;
+          togglePwdBtn.setLabel(showRtspPwd ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+          updateRtspFields();
+        }
+      });
+      rtspCardHead.appendChild(togglePwdBtn);
+    }
+    rtspCardBody.appendChild(rtspCardHead);
+
+    var mainStack = el('div', { class: 'c-stack c-stack--xs' });
+    var mainHeader = el('div', { class: 'c-row c-row--between' });
+    mainHeader.appendChild(el('span', { class: 'u-muted u-text-sm', text: 'Luồng chính (HD / Chất lượng cao):' }));
+    var mainCopyBtn = ui.button({
+      label: 'Sao chép',
+      icon: 'copy',
+      size: 'xs',
+      variant: 'secondary',
+      onClick: function () {
+        var url = (liveRtspUrls && liveRtspUrls.main_url) ? liveRtspUrls.main_url : mainRtspInput.value;
+        ui.copy(url, { label: 'đường dẫn luồng chính' });
+      }
+    });
+    mainHeader.appendChild(mainCopyBtn);
+    mainStack.appendChild(mainHeader);
+
+    var mainGroup = el('div', { class: 'c-input-group' });
+    var mainRtspInput = el('input', {
+      class: 'c-input c-input--mono',
+      attrs: { type: 'text', readonly: '', spellcheck: 'false' }
+    });
+    mainGroup.appendChild(mainRtspInput);
+    mainStack.appendChild(mainGroup);
+    rtspCardBody.appendChild(mainStack);
+
+    var subStack = el('div', { class: 'c-stack c-stack--xs u-mt-8' });
+    var subHeader = el('div', { class: 'c-row c-row--between' });
+    subHeader.appendChild(el('span', { class: 'u-muted u-text-sm', text: 'Luồng phụ (SD / Mượt mà):' }));
+    var subCopyBtn = ui.button({
+      label: 'Sao chép',
+      icon: 'copy',
+      size: 'xs',
+      variant: 'secondary',
+      onClick: function () {
+        var url = (liveRtspUrls && liveRtspUrls.sub_url) ? liveRtspUrls.sub_url : subRtspInput.value;
+        ui.copy(url, { label: 'đường dẫn luồng phụ' });
+      }
+    });
+    subHeader.appendChild(subCopyBtn);
+    subStack.appendChild(subHeader);
+
+    var subGroup = el('div', { class: 'c-input-group' });
+    var subRtspInput = el('input', {
+      class: 'c-input c-input--mono',
+      attrs: { type: 'text', readonly: '', spellcheck: 'false' }
+    });
+    subGroup.appendChild(subRtspInput);
+    subStack.appendChild(subGroup);
+    rtspCardBody.appendChild(subStack);
+
+    rtspCard.appendChild(rtspCardBody);
+    body.appendChild(rtspCard);
+
+    function updateRtspFields() {
+      var ip = fieldValueTrim(fIp);
+      var port = fieldValueTrim(fRtsp) || 554;
+      var user = fieldValueTrim(fUser) || 'admin';
+      var vendor = fieldValueTrim(fVendor) || 'Dahua/Imou';
+      var customPath = fieldValueTrim(fRtspPath);
+
+      if (liveRtspUrls) {
+        mainRtspInput.value = (showRtspPwd && liveRtspUrls.main_url) ? liveRtspUrls.main_url : (liveRtspUrls.masked_main_url || liveRtspUrls.main_url);
+        subRtspInput.value = (showRtspPwd && liveRtspUrls.sub_url) ? liveRtspUrls.sub_url : (liveRtspUrls.masked_sub_url || liveRtspUrls.sub_url);
+      } else {
+        mainRtspInput.value = buildRtspStreamUrl({
+          ip: ip,
+          rtsp_port: port,
+          username: user,
+          vendor: vendor,
+          rtsp_path: customPath,
+          subtype: 0
+        });
+        subRtspInput.value = buildRtspStreamUrl({
+          ip: ip,
+          rtsp_port: port,
+          username: user,
+          vendor: vendor,
+          rtsp_path: customPath,
+          subtype: 1
+        });
+      }
+    }
+
+    if (isEdit && camera && camera.ip) {
+      ctx.api.get('/api/camera/rtsp-urls', {
+        query: { ip: camera.ip },
+        signal: ctx.signal,
+        silent: true
+      }).then(function (res) {
+        if (modalClosed) { return; }
+        if (res && res.ok) {
+          liveRtspUrls = res;
+          updateRtspFields();
+        }
+      }).catch(function () {});
+    }
+
+    [fIp, fRtsp, fUser, fVendor, fRtspPath].forEach(function (field) {
+      if (field && field.input) {
+        field.input.addEventListener('input', function () {
+          liveRtspUrls = null;
+          updateRtspFields();
+        });
+      }
+    });
+    updateRtspFields();
 
     var testResult = el('div', { class: 'u-mt-8' });
     body.appendChild(testResult);
@@ -1390,6 +1562,8 @@
     };
     var drawerClosed = false;
     var clipsTable = null;
+    var detailRtspUrls = null;
+    var detailShowPwd = false;
 
     var body = el('div', { class: 'c-stack' });
 
@@ -1540,6 +1714,120 @@
         rows.push(['Ghi chú', pick(camera.note, '—')]);
       }
       infoHost.appendChild(kvBlock(rows));
+
+      var rtspCard = el('div', { class: 'c-card u-mt-12' });
+      var rtspCardBody = el('div', { class: 'c-card__body c-stack c-stack--sm' });
+      var rtspCardHead = el('div', { class: 'c-row c-row--between' });
+      rtspCardHead.appendChild(el('strong', { text: 'Đường dẫn luồng RTSP (VLC / NVR / OBS)' }));
+
+      var toggleBtn = null;
+      if (ctx && ctx.isAdmin) {
+        toggleBtn = ui.button({
+          label: detailShowPwd ? 'Ẩn mật khẩu' : 'Hiện mật khẩu',
+          icon: 'eye',
+          size: 'xs',
+          variant: 'ghost',
+          onClick: function () {
+            detailShowPwd = !detailShowPwd;
+            toggleBtn.setLabel(detailShowPwd ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+            updateDetailRtspFields();
+          }
+        });
+        rtspCardHead.appendChild(toggleBtn);
+      }
+      rtspCardBody.appendChild(rtspCardHead);
+
+      var mainStack = el('div', { class: 'c-stack c-stack--xs' });
+      var mainHeader = el('div', { class: 'c-row c-row--between' });
+      mainHeader.appendChild(el('span', { class: 'u-muted u-text-sm', text: 'Luồng chính (HD / Chất lượng cao):' }));
+      var mainCopy = ui.button({
+        label: 'Sao chép',
+        icon: 'copy',
+        size: 'xs',
+        variant: 'secondary',
+        onClick: function () {
+          var url = (detailRtspUrls && detailRtspUrls.main_url) ? detailRtspUrls.main_url : mainInp.value;
+          ui.copy(url, { label: 'đường dẫn luồng chính' });
+        }
+      });
+      mainHeader.appendChild(mainCopy);
+      mainStack.appendChild(mainHeader);
+
+      var mainGrp = el('div', { class: 'c-input-group' });
+      var mainInp = el('input', {
+        class: 'c-input c-input--mono',
+        attrs: { type: 'text', readonly: '', spellcheck: 'false' }
+      });
+      mainGrp.appendChild(mainInp);
+      mainStack.appendChild(mainGrp);
+      rtspCardBody.appendChild(mainStack);
+
+      var subStack = el('div', { class: 'c-stack c-stack--xs u-mt-8' });
+      var subHeader = el('div', { class: 'c-row c-row--between' });
+      subHeader.appendChild(el('span', { class: 'u-muted u-text-sm', text: 'Luồng phụ (SD / Mượt mà):' }));
+      var subCopy = ui.button({
+        label: 'Sao chép',
+        icon: 'copy',
+        size: 'xs',
+        variant: 'secondary',
+        onClick: function () {
+          var url = (detailRtspUrls && detailRtspUrls.sub_url) ? detailRtspUrls.sub_url : subInp.value;
+          ui.copy(url, { label: 'đường dẫn luồng phụ' });
+        }
+      });
+      subHeader.appendChild(subCopy);
+      subStack.appendChild(subHeader);
+
+      var subGrp = el('div', { class: 'c-input-group' });
+      var subInp = el('input', {
+        class: 'c-input c-input--mono',
+        attrs: { type: 'text', readonly: '', spellcheck: 'false' }
+      });
+      subGrp.appendChild(subInp);
+      subStack.appendChild(subGrp);
+      rtspCardBody.appendChild(subStack);
+
+      rtspCard.appendChild(rtspCardBody);
+      infoHost.appendChild(rtspCard);
+
+      function updateDetailRtspFields() {
+        if (detailRtspUrls) {
+          mainInp.value = (detailShowPwd && detailRtspUrls.main_url) ? detailRtspUrls.main_url : (detailRtspUrls.masked_main_url || detailRtspUrls.main_url);
+          subInp.value = (detailShowPwd && detailRtspUrls.sub_url) ? detailRtspUrls.sub_url : (detailRtspUrls.masked_sub_url || detailRtspUrls.sub_url);
+        } else {
+          mainInp.value = buildRtspStreamUrl({
+            ip: camera.ip,
+            rtsp_port: camera.rtsp_port || 554,
+            username: camera.username || 'admin',
+            vendor: camera.vendor,
+            rtsp_path: camera.rtsp_path,
+            subtype: 0
+          });
+          subInp.value = buildRtspStreamUrl({
+            ip: camera.ip,
+            rtsp_port: camera.rtsp_port || 554,
+            username: camera.username || 'admin',
+            vendor: camera.vendor,
+            rtsp_path: camera.rtsp_path,
+            subtype: 1
+          });
+        }
+      }
+      updateDetailRtspFields();
+
+      if (!detailRtspUrls && camera && camera.ip) {
+        ctx.api.get('/api/camera/rtsp-urls', {
+          query: { ip: camera.ip },
+          signal: controller.signal,
+          silent: true
+        }).then(function (res) {
+          if (drawerClosed) { return; }
+          if (res && res.ok) {
+            detailRtspUrls = res;
+            updateDetailRtspFields();
+          }
+        }).catch(function () {});
+      }
       if (detailState.loading) {
         infoHost.appendChild(el('p', { class: 'c-muted-block', text: 'Đang đọc thêm thông tin từ camera…' }));
       }

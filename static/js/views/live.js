@@ -426,6 +426,16 @@
         onClick: function () { openExternalPlayer(); }
       });
       groupActions.appendChild(refs.externalBtn);
+
+      refs.rtspBtn = ui.button({
+        label: 'Luồng RTSP',
+        icon: 'copy',
+        variant: 'secondary',
+        size: 'sm',
+        testId: 'live-rtsp-btn',
+        onClick: function () { openRtspModal(); }
+      });
+      groupActions.appendChild(refs.rtspBtn);
     }
 
     refs.theaterBtn = ui.button({
@@ -1549,6 +1559,133 @@
     });
   }
 
+  function openRtspModal() {
+    var slot = activeSlot();
+    if (!slot) {
+      ui.toast('Chọn ô camera trước khi xem luồng RTSP.', { type: 'warning' });
+      return;
+    }
+    var cam = activeCamera();
+    var camName = cam ? (cam.name || cam.ip) : slot.ip;
+    var ip = slot.ip;
+    var ch = slot.channel || 1;
+    var rtspUrls = null;
+    var showPwd = false;
+
+    var body = el('div', { class: 'c-stack c-stack--sm' });
+    body.appendChild(el('p', { class: 'u-muted', text: 'Đường dẫn luồng RTSP dùng để phát trực tiếp trong VLC Media Player, OBS Studio, Home Assistant hoặc đầu ghi NVR ngoài.' }));
+
+    var mainStack = el('div', { class: 'c-stack c-stack--xs u-mt-8' });
+    var mainHeader = el('div', { class: 'c-row c-row--between' });
+    mainHeader.appendChild(el('strong', { text: 'Luồng chính (HD / Độ nét cao):' }));
+    var mainCopy = ui.button({
+      label: 'Sao chép',
+      icon: 'copy',
+      size: 'xs',
+      variant: 'secondary',
+      onClick: function () {
+        var url = (rtspUrls && rtspUrls.main_url) ? rtspUrls.main_url : mainInp.value;
+        ui.copy(url, { label: 'luồng chính' });
+      }
+    });
+    mainHeader.appendChild(mainCopy);
+    mainStack.appendChild(mainHeader);
+
+    var mainGrp = el('div', { class: 'c-input-group' });
+    var mainInp = el('input', {
+      class: 'c-input c-input--mono',
+      attrs: { type: 'text', readonly: '', spellcheck: 'false', value: 'Đang tải…' }
+    });
+    mainGrp.appendChild(mainInp);
+    mainStack.appendChild(mainGrp);
+    body.appendChild(mainStack);
+
+    var subStack = el('div', { class: 'c-stack c-stack--xs u-mt-12' });
+    var subHeader = el('div', { class: 'c-row c-row--between' });
+    subHeader.appendChild(el('strong', { text: 'Luồng phụ (SD / Mượt mà):' }));
+    var subCopy = ui.button({
+      label: 'Sao chép',
+      icon: 'copy',
+      size: 'xs',
+      variant: 'secondary',
+      onClick: function () {
+        var url = (rtspUrls && rtspUrls.sub_url) ? rtspUrls.sub_url : subInp.value;
+        ui.copy(url, { label: 'luồng phụ' });
+      }
+    });
+    subHeader.appendChild(subCopy);
+    subStack.appendChild(subHeader);
+
+    var subGrp = el('div', { class: 'c-input-group' });
+    var subInp = el('input', {
+      class: 'c-input c-input--mono',
+      attrs: { type: 'text', readonly: '', spellcheck: 'false', value: 'Đang tải…' }
+    });
+    subGrp.appendChild(subInp);
+    subStack.appendChild(subGrp);
+    body.appendChild(subStack);
+
+    function updateLiveRtspInputs() {
+      if (!rtspUrls) { return; }
+      mainInp.value = (showPwd && rtspUrls.main_url) ? rtspUrls.main_url : (rtspUrls.masked_main_url || rtspUrls.main_url || '');
+      subInp.value = (showPwd && rtspUrls.sub_url) ? rtspUrls.sub_url : (rtspUrls.masked_sub_url || rtspUrls.sub_url || '');
+    }
+
+    var togglePwdBtn = null;
+    if (ctxRef.isAdmin) {
+      togglePwdBtn = ui.button({
+        label: 'Hiện mật khẩu',
+        icon: 'eye',
+        size: 'xs',
+        variant: 'ghost',
+        onClick: function () {
+          showPwd = !showPwd;
+          togglePwdBtn.setLabel(showPwd ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+          updateLiveRtspInputs();
+        }
+      });
+      var pwdRow = el('div', { class: 'c-row c-row--between u-mt-8' });
+      pwdRow.appendChild(el('span', { class: 'u-muted u-text-xs', text: 'Nút "Sao chép" sẽ tự động điền mật khẩu đầy đủ để xem ngay.' }));
+      pwdRow.appendChild(togglePwdBtn);
+      body.appendChild(pwdRow);
+    }
+
+    var tip = el('div', { class: 'c-card u-mt-12' });
+    var tipBody = el('div', { class: 'c-card__body u-text-xs u-muted' });
+    tipBody.appendChild(el('strong', { text: 'Mẹo mở trên VLC: ' }));
+    tipBody.appendChild(el('span', { text: 'Mở VLC Media Player → Nhấn Ctrl + N (Media > Open Network Stream) → Dán đường dẫn vừa sao chép → Bấm Play.' }));
+    tip.appendChild(tipBody);
+    body.appendChild(tip);
+
+    var closeBtn = ui.button({
+      label: 'Đóng',
+      variant: 'secondary',
+      onClick: function () { modal.close(); }
+    });
+
+    var modal = ui.modal({
+      title: 'Luồng RTSP — ' + camName,
+      body: body,
+      footer: [closeBtn],
+      size: 'md',
+      dismissible: true
+    });
+
+    ctxRef.api.get('/api/camera/rtsp-urls', {
+      query: { ip: ip, channel: ch },
+      signal: ctxRef.signal,
+      silent: true
+    }).then(function (res) {
+      if (res && res.ok) {
+        rtspUrls = res;
+        updateLiveRtspInputs();
+      }
+    }).catch(function (err) {
+      mainInp.value = 'Không lấy được đường dẫn (' + (err.message || 'lỗi kết nối') + ')';
+      subInp.value = '';
+    });
+  }
+
   function toggleTheater() {
     view.theater = !view.theater;
     if (viewRoot) { viewRoot.classList.toggle('is-theater', view.theater); }
@@ -1613,6 +1750,7 @@
 
     if (refs.snapshotBtn) { refs.snapshotBtn.disabled = !slot; }
     if (refs.externalBtn) { refs.externalBtn.disabled = !slot; }
+    if (refs.rtspBtn) { refs.rtspBtn.disabled = !slot; }
     if (refs.recordBtn) { syncRecordButton(); }
     if (refs.audioBtn) {
       var on = !!audioKey && !!slot && audioKey === slotKey(slot);
